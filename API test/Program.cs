@@ -37,6 +37,7 @@ namespace API_test
 
             while (!loopydoopy)
             {
+                IRestResponse response;
                 if (stupido == 10)
                 {
                     System.Console.WriteLine("You've failed ten times in a row. You are assumed to have a very limited intelligence. Three pokemon will be suggested.");
@@ -44,6 +45,19 @@ namespace API_test
                     Console.ReadLine();
                     loopydoopy = true;
                     //add 3 random pokemon names from api number wih Random type and get class witth name to add tto list and display in Selection  
+
+                    Pokemon[] pokes = new Pokemon[3];
+
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Random rand = new Random();
+                        req = new RestRequest($"pokemon/{rand.Next(896) + 1}");
+                        response = client.Get(req);
+
+                        pokes[i] = JsonConvert.DeserializeObject<Pokemon>(response.Content);
+                        choices.Add(pokes[i].name);
+                    }
+                    pokemon = pokes[Selection(choices.ToArray())];
                 }
                 else
                 {
@@ -51,18 +65,20 @@ namespace API_test
                     System.Console.WriteLine("Enter the name of a Pokemon");
                     string pokemonRequest = Console.ReadLine().ToLower();
                     req = new RestRequest($"pokemon/{pokemonRequest}");
-                    Press();
+                    response = client.Get(req);
+
+                    if (CheckStatus(response))
+                    {
+                        loopydoopy = true;
+                    }
+                    else
+                    {
+                        System.Console.WriteLine("That aint a pokemon mate, check ur spellin or smth");
+                    }
 
                 }
 
-                IRestResponse response = client.Get(req);
-                if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
-                {
-                    loopydoopy = true;
-                    pokemon = JsonConvert.DeserializeObject<Pokemon>(response.Content);
-                    stupido = 0;
-                }
-
+                Press();
             }
 
             //  Pokemon spinda = JsonConvert.DeserializeObject<Pokemon>(response.Content);
@@ -70,6 +86,17 @@ namespace API_test
             System.Console.WriteLine(pokemon.name);
             Console.ReadLine();
 
+
+            bool CheckStatus(IRestResponse response)
+            {
+                if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+                {
+                    pokemon = JsonConvert.DeserializeObject<Pokemon>(response.Content);
+                    stupido = 0;
+                    return true;
+                }
+                return false;
+            }
         }
         static void Press()
         {
@@ -84,7 +111,7 @@ namespace API_test
             {
                 if (current == i)
                 {
-                    System.Console.WriteLine($"> {choices[i]}");
+                    System.Console.WriteLine($">  {choices[i]}");
                 }
                 else
                 {
